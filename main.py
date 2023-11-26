@@ -1,7 +1,7 @@
 import sys
 sys.path.append('C:/Users/ivand/Documents/Projects/Pigs/Blender-CV-Utils')
 
-from blender_cv_utils.trackable import TrackObject
+from blender_cv_utils.trackable import SceneObject
 import time
 import bpy
 import numpy as np
@@ -11,22 +11,22 @@ import datetime
 import matplotlib.pyplot as plt
 
 
-obs = [
-    TrackObject('Cube'),
-    TrackObject('Sphere'),
-    TrackObject('Camera')]
-
-bpy.ops.wm.open_mainfile(filepath="file_path")
+obs = [SceneObject('Cube')]
 
 
 class Renderer():
-    def __init__(self, output_path, output_suffix, obs):
+    def __init__(self, cameras, obs, output_path, output_suffix='default', blender_file_path=None):
+        bpy.ops.wm.open_mainfile(filepath=blender_file_path)
+        time.sleep(1)
         assert len(list(bpy.data.scenes)) == 1
+
+        self.cameras = cameras
         self.obs = obs
         self.frame_index = 0
-        self.output_root_path = output_path
+
         time_suffix = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-        self.output_suffix = f'{output_suffix}_{time_suffix}'
+        self.output_path = os.path.join(output_path, f'{output_suffix}_{time_suffix}')
+        os.mkdir(self.output_path)
         
         self.scene = bpy.data.scenes['Scene']
         self.resolution_percentage = self.scene.render.resolution_percentage
@@ -36,7 +36,7 @@ class Renderer():
         self.pixel_aspect_y = self.scene.render.pixel_aspect_y
         self.engine = self.scene.render.engine
 
-        os.mkdir(os.path.join(self.output_root_path, self.output_suffix))
+        # also save global params that is not change during generation
 
         pickle.dump({'resolution_percentage': self.resolution_percentage,
                         'resolution_x': self.resolution_x,
@@ -44,7 +44,7 @@ class Renderer():
                         'pixel_aspect_x': self.pixel_aspect_x,
                         'pixel_aspect_y': self.pixel_aspect_y,
                         'engine': self.engine,}, 
-                    open(os.path.join(self.output_root_path, self.output_suffix, 'render_params.pickle'), 'wb'))
+                    open(os.path.join(self.output_path, 'render_params.pickle'), 'wb'))
 
         self._init_cryptomatte()
 
@@ -52,6 +52,7 @@ class Renderer():
         if not self.scene.use_nodes:
             self.scene.use_nodes = True
         else:
+            print('Nodes initiated')
             return
         self.scene.view_layers["ViewLayer"].use_pass_cryptomatte_object = True
 
@@ -119,7 +120,3 @@ class Renderer():
 
         pickle.dump(annots, open(os.path.join(self.output_root_path, self.output_suffix, f'annots_{self.frame_index}.pickle'), 'wb'))
         self.frame_index+=1
-
-
-renderer = Renderer('C:/Users/ivand/Desktop/ses', 'test', obs)
-data = renderer.main()

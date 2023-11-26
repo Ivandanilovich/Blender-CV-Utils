@@ -1,46 +1,88 @@
 import sys
 sys.path.append('C:/Users/ivand/Documents/Projects/Pigs/Blender-CV-Utils')
 
-
 import bpy_types
-import numpy as np
 import bpy
 
 
-class TObject():
-    def __init__(self, ob: bpy_types.Object):
-        self.ob = ob
-        assert len(ob.modifiers) == 0
-        assert len(ob.constraints) == 0
+class SceneObject():
+    def __init__(self, ob):
+        if isinstance(ob, str):
+            assert ob in bpy.data.objects.keys(), 'Object with that name is not at scene'
+            self._name = ob
+        elif not isinstance(ob, bpy_types.Object):
+            raise Exception('Not blender object')
+        else:
+            self._name = ob.name
+    
+    @property
+    def name(self):
+        return self._name
+    
+    @property
+    def ob(self):
+        return bpy.data.objects[self.name] # safier to call object by name each time
+    
+    @property
+    def type(self):
+        return self.ob.type
+    
+    @property
+    def modifiers(self):
+        return list(self.ob.modifiers)
+    
+    @property
+    def constraints(self):
+        return list(self.ob.constraints)
+
+    def make_active(self):
+        bpy.ops.object.select_all(action='DESELECT')
+        self.ob.select_set(True)
+        bpy.context.view_layer.objects.active = self.ob
+
+    def _apply_modifiers_and_constraints(self):
+        if len(list(self.modifiers))==0: # and len(list(self.constraints))==0  
+            return False, self.ob
+        
+        self.make_active()
+        bpy.ops.object.duplicate()
+        for i in bpy.context.active_object.modifiers:
+            bpy.ops.object.modifier_apply(modifier=i.name)
+        # for i in bpy.context.active_object.constraints:
+        #     bpy.ops.constraint.apply(constraint=i.name, owner='OBJECT')
+        return True, bpy.context.active_object
 
     def get_annotations(self):
-        d = {
-            'type': self.ob.type,
-            'name': self.ob.name,
-            'location': np.array(self.ob.location),
-            'scale': np.array(self.ob.scale),
-            'rotation_euler': np.array(self.ob.rotation_euler),
+        return {
+            'type': self.type,
+            'name': self.name,
+            'location': tuple(self.ob.location),
+            'scale': tuple(self.ob.scale),
+            'rotation_euler': tuple(self.ob.rotation_euler),
         }
-        return d
 
 
-class MeshObject(TObject):
+class MeshObject(SceneObject):
     def __init__(self, ob):
         super().__init__(ob)
-        assert ob.type == 'MESH'
+        assert self.type == 'MESH'
 
     def get_annotations(self):
         super_annots = super().get_annotations()
+        ret, temp_ob = self._apply_modifiers_and_constraints()
         d = {
-            'verts': np.array([i.co for i in self.ob.data.vertices])
+            'verts': [tuple(i.co) for i in temp_ob.data.vertices]
         }
+        if ret:
+            bpy.ops.object.delete()
         return super_annots | d
+    
 
 
-class CameraObject(TObject):
+class CameraObject(SceneObject):
     def __init__(self, ob):
         super().__init__(ob)
-        assert ob.type == 'CAMERA'
+        assert self.type == 'CAMERA'
 
     def get_annotations(self):
         super_annots = super().get_annotations()
@@ -56,40 +98,6 @@ class CameraObject(TObject):
         return super_annots | d
 
 
-SUPPORTED_OBJECT_TYPES = {
-    'CAMERA': CameraObject,
-    'MESH': MeshObject,
-    # 'ARMATURE': None
-}
+# c = MeshObject('Cube')
+# c.get_annotations()
 
-
-class BlenderObject():
-    def __init__(self, ob):
-        if isinstance(ob, str):
-            assert ob in bpy.data.objects.keys(), 'Object with that name is not at scene'
-            ob = bpy.data.objects[ob]
-        elif not isinstance(ob, bpy_types.Object):
-            raise Exception('Not blender object')
-        self.ob = ob
-        self.type = self.ob.type
-        self.name = self.ob.name
-
-    def make_active(self):
-        bpy.ops.object.select_all(action='DESELECT')
-        self.ob.select_set(True)
-        bpy.context.view_layer.objects.active = self.ob
-
-
-# facade pattern: ob can be different types
-class TrackObject(BlenderObject):
-    def __init__(self, ob):
-        super().__init__(ob)
-        self.ob_wrap = SUPPORTED_OBJECT_TYPES[self.type](self.ob)
-        
-    def get_annotations(self):
-        return self.ob_wrap.get_annotations()
-
-
-# tob = TrackObject('Camera')
-# print(tob.ob)
-# print(tob.get_annotations())
