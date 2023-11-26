@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "blender-cv-utils"
+version = "0.1.0"
+description = "Utils collection for synthetic dataset creation via Blender for computer vision tasks"
+authors = ["Ivandanilovich <ivandanilovich99@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+jupyter = "^1.0.0"
+pandas = "^2.1.3"
+plotly = "^5.18.0"
+matplotlib = "^3.8.2"
+
+[tool.poetry.group.dev.dependencies]
+fake-bpy-module-latest = "^20231125"
+opencv-python = "^4.8.1.78"
+plotly = "^5.18.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
