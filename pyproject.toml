@@ -13,11 +13,13 @@ plotly = "^5.18.0"
 matplotlib = "^3.8.2"
 torch = "^2.1.1"
 roma = "^1.4.1"
-
-[tool.poetry.group.dev.dependencies]
+scipy = "^1.11.4"
+einops = "^0.7.0"
+imageio = "^2.33.0"
+scikit-image = "^0.22.0"
 fake-bpy-module-latest = "^20231125"
 opencv-python = "^4.8.1.78"
-plotly = "^5.18.0"
+visualization-utils = {git = "https://github.com/Ivandanilovich/Visualization-Utils.git"}
 
 [build-system]
 requires = ["poetry-core"]
