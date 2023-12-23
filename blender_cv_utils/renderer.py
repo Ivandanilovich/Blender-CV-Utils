@@ -28,6 +28,9 @@ class RenderHandler:
                               'engine': scene.render.engine,}
         json.dump(self.global_params, open(os.path.join(output_path, output_suffix, f'global_params.json'),'w'), indent=4)
 
+        skeletons = {ob.name: ob.get_skeleton() for ob in self.objects if ob.type == 'ARMATURE'}
+        json.dump(skeletons, open(os.path.join(output_path, output_suffix, f'skeletons.json'),'w'), indent=4)
+
 
 
     def initCryptomatte(self):
@@ -94,7 +97,7 @@ class RenderHandler:
                     node.file_slots[0].path = f'{camera.name}_'
                     node.mute = False
             bpy.ops.render.render()
-        json.dump(annots, open(os.path.join(self.output_path, self.output_suffix, f'annots_frame{frame_index:04}.json'),'w'), indent=4)
+        json.dump(annots, open(os.path.join(self.output_path, self.output_suffix, f'annots_frame{frame_index:04}.json'),'w'), indent=None)
     
     def render_sequence(self):
         scene = bpy.context.scene

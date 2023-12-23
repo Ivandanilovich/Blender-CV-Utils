@@ -67,6 +67,11 @@ class ArmatureObject(SceneObject):
         super().__init__(ob)
         assert self.type == 'ARMATURE'
 
+    def get_skeleton(self):
+        # Create a dictionary to map bone names to their children's names
+        bonesmap = {bone.name: [i.name for i in bone.children] for bone in self.ob.data.bones}
+        return bonesmap
+
     def get_annotations(self, depsgraph, **kwargs):
         super_annots = super().get_annotations(depsgraph)
         ob = depsgraph.objects[self._name]
